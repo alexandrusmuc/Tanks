@@ -28,6 +28,7 @@ public class Tank {
 
     ///maybe more movement than this
     private int tankMoving = STOPPED;
+    private int heading = RIGHT;
     //private int tankSpeed;
 
 
@@ -82,20 +83,24 @@ public class Tank {
           if(tankMoving == LEFT){
               x = x - tankSpeed / fps;
                bitmap = bitmapleft;
+               heading = LEFT;
            }
             if(tankMoving == RIGHT){
                 x = x + tankSpeed / fps;
                 bitmap = bitmapright;
+                heading = RIGHT;
             }
             if(tankMoving == UP){
                 y = y - tankSpeed / fps;
                 bitmap = bitmapup;
+                heading = UP;
 
             }
 
             if(tankMoving == DOWN){
                 y=y + tankSpeed / fps;
                 bitmap = bitmapdown;
+                heading = DOWN;
 
            }
 
@@ -130,6 +135,14 @@ public class Tank {
 
     public float getTankSpeed() {
         return tankSpeed;
+    }
+
+    public float getHeight() {
+    return this.height;
+    }
+
+    public int getDirection() {
+        return this.heading;
     }
 }
 

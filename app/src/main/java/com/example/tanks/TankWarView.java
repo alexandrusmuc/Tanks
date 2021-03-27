@@ -29,6 +29,8 @@ public class TankWarView extends SurfaceView implements Runnable{
     private Tank enemy;
     private Joystick joystick;
     private Button fireButton;
+    private Bullet playerBullet;
+    private int joystickPointerID = 0;
 
 
     public TankWarView(Context context, int x, int y) {
@@ -52,6 +54,8 @@ public class TankWarView extends SurfaceView implements Runnable{
 
 
         joystick = new Joystick(screenX/8, screenY -screenX/8,screenX/10,screenX/20);
+
+        playerBullet =  new Bullet(context,screenX,screenY);
 
 
 
@@ -86,17 +90,29 @@ public class TankWarView extends SurfaceView implements Runnable{
 
     private void update(){
         tank.update(fps);
+        if (playerBullet.isActive()){
+            playerBullet.update(fps);
+        }
         checkColisions();
         joystick.update();
 
 
     }
     private void checkColisions(){
+
+        //tank off screen
         if(tank.getX() > screenX - tank.getLength()) tank.setX(screenX-tank.getLength());
         if(tank.getX()<0 ) tank.setX(0);
         if(tank.getY()> screenY-tank.getLength())
             tank.setY(screenY-tank.getLength());
         if(tank.getY()< 0 ) tank.setY(0);
+
+        //bullet off screen
+        if(playerBullet.getX() > screenX - playerBullet.getLength() ||
+        (playerBullet.getX()<0 ) ||
+        (playerBullet.getY()> screenY-playerBullet.getLength())||
+
+        (playerBullet.getY()< 0 )) playerBullet.setInactive();
 
     }
 
@@ -118,6 +134,11 @@ public class TankWarView extends SurfaceView implements Runnable{
             canvas.drawBitmap(tank.getBitmap(),tank.getX(),tank.getY(),paint);
 
             joystick.draw(canvas);
+            if(playerBullet.isActive()){
+                //canvas.drawRect(playerBullet.getRect(),paint);
+                canvas.drawCircle(playerBullet.getX(),playerBullet.getY(),playerBullet.getLength()/2,paint);
+                //canvas.drawBitmap(playerBullet.getBitmap(),playerBullet.getX(),playerBullet.getY(),paint);
+            }
 
             ourHolder.unlockCanvasAndPost(canvas);
 
@@ -187,11 +208,18 @@ public class TankWarView extends SurfaceView implements Runnable{
 //}
     @Override
     public boolean onTouchEvent(MotionEvent event){
-        switch (event.getAction()){
+        switch (event.getActionMasked()){
             case MotionEvent.ACTION_DOWN:
-                paused = false;
-                if(joystick.isPressed((double)event.getX(), (double)event.getY())){
+            case MotionEvent.ACTION_POINTER_DOWN:
+                if(joystick.isPressed()){
+                    //joystick was already pressed
+                    playerBullet.shoot(tank);
+                }else if(joystick.isPressed((double)event.getX(), (double)event.getY())){
+                    paused = false;
+                    joystickPointerID = event.getPointerId(event.getActionIndex());
                     joystick.setIsPressed(true);
+                }else{
+                    playerBullet.shoot(tank);
                 }
                 return true;
             case MotionEvent.ACTION_MOVE:
@@ -200,6 +228,7 @@ public class TankWarView extends SurfaceView implements Runnable{
                     if(joystick.getActuatorY()< 0.0){
                         if((Math.abs(joystick.getActuatorY())> (Math.abs(joystick.getActuatorX())))){
                             tank.setMovementState(tank.UP);
+                            //playerBullet.shoot(tank);
 
                         }else{
                             if(joystick.getActuatorX()>0.0){
@@ -227,9 +256,14 @@ public class TankWarView extends SurfaceView implements Runnable{
                 }
                 return true;
             case MotionEvent.ACTION_UP:
-                joystick.setIsPressed(false);
-                joystick.resetActuator();
-                tank.setMovementState(tank.STOPPED);
+            case MotionEvent.ACTION_POINTER_UP:
+                if(joystickPointerID == event.getPointerId(event.getActionIndex())){
+                    joystick.setIsPressed(false);
+                    joystick.resetActuator();
+                    tank.setMovementState(tank.STOPPED);
+                }
+
+
                 return true;
 
 //            case MotionEvent.ACTION_POINTER_DOWN:
