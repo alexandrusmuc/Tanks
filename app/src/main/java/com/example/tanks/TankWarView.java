@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.Button;
 
 public class TankWarView extends SurfaceView implements Runnable{
 
@@ -25,6 +26,9 @@ public class TankWarView extends SurfaceView implements Runnable{
     private int score = 0;
     private int lives = 5;
     private Tank tank;
+    private Tank enemy;
+    private Joystick joystick;
+    private Button fireButton;
 
 
     public TankWarView(Context context, int x, int y) {
@@ -45,6 +49,13 @@ public class TankWarView extends SurfaceView implements Runnable{
 
     private void prepareLevel(){
         tank = new Tank(context,screenX,screenY);
+
+
+        joystick = new Joystick(screenX/8, screenY -screenX/8,screenX/10,screenX/20);
+
+
+
+
 
     }
 
@@ -76,6 +87,7 @@ public class TankWarView extends SurfaceView implements Runnable{
     private void update(){
         tank.update(fps);
         checkColisions();
+        joystick.update();
 
 
     }
@@ -85,6 +97,7 @@ public class TankWarView extends SurfaceView implements Runnable{
         if(tank.getY()> screenY-tank.getLength())
             tank.setY(screenY-tank.getLength());
         if(tank.getY()< 0 ) tank.setY(0);
+
     }
 
 
@@ -100,9 +113,14 @@ public class TankWarView extends SurfaceView implements Runnable{
             paint.setColor(Color.argb(255,  255, 255, 255));
             paint.setColor(Color.argb(255,  249, 129, 0));
             paint.setTextSize(40);
+            //paint.setTextAlign(Paint.Align.CENTER);
             canvas.drawText("Score: " + score + "   Lives: " + lives, 10,50, paint);
             canvas.drawBitmap(tank.getBitmap(),tank.getX(),tank.getY(),paint);
+
+            joystick.draw(canvas);
+
             ourHolder.unlockCanvasAndPost(canvas);
+
         }
 
     }
@@ -129,43 +147,103 @@ public class TankWarView extends SurfaceView implements Runnable{
     }
 
 
+//    @Override
+//    public boolean onTouchEvent(MotionEvent event) {
+//        switch (event.getAction() & event.getActionMasked()) {
+//            case MotionEvent.ACTION_DOWN:
+//                paused = false;
+//                if (event.getY() > screenY - screenY / 4) {
+//                    if (event.getX() > screenX - 3 * screenX / 4 && event.getX() < screenX - screenX / 4)
+//                        tank.setMovementState(tank.DOWN);
+//
+//                }
+//                if (event.getY() < screenY - 3 * screenY / 4) {
+//                    if (event.getX() > screenX - 3 * screenX / 4 && event.getX() < screenX - screenX / 4)
+//                        tank.setMovementState(tank.UP);
+//                }
+//
+//
+//                if (event.getX() > screenX - screenX / 4) {
+//                    if (event.getY() > screenX - 3 * screenY / 4 && event.getX() < screenY - screenY / 4)
+//                        tank.setMovementState(tank.RIGHT);
+//
+//                }
+//                if (event.getX() < screenX - 3 * screenX / 4) {
+//                    if (event.getY() > screenY - 3 * screenY / 4 && event.getX() < screenY - screenY / 4)
+//                        tank.setMovementState(tank.LEFT);
+//                }
+//
+//
+//                break;
+//            case MotionEvent.ACTION_UP:
+//                //paused = true;
+//                tank.setMovementState(tank.STOPPED);
+//                break;
+//        }
+//        return true;
+//
+//
+//
+//}
     @Override
     public boolean onTouchEvent(MotionEvent event){
-        switch (event.getAction() & event.getActionMasked()){
+        switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
                 paused = false;
-                if(event.getY()>screenY-screenY/4){
-                    if(event.getX()>screenX-3*screenX/4 && event.getX()<screenX - screenX/4)
-                        tank.setMovementState(tank.DOWN);
+                if(joystick.isPressed((double)event.getX(), (double)event.getY())){
+                    joystick.setIsPressed(true);
+                }
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                if(joystick.isPressed()){
+                    joystick.setActuator((double)event.getX(), (double)event.getY());
+                    if(joystick.getActuatorY()< 0.0){
+                        if((Math.abs(joystick.getActuatorY())> (Math.abs(joystick.getActuatorX())))){
+                            tank.setMovementState(tank.UP);
+
+                        }else{
+                            if(joystick.getActuatorX()>0.0){
+                                tank.setMovementState(tank.RIGHT);
+                            }else {
+                                tank.setMovementState(tank.LEFT);
+                            }
+
+                    }
+
+                }else{
+                        if((Math.abs(joystick.getActuatorY())> (Math.abs(joystick.getActuatorX())))){
+                            tank.setMovementState(tank.DOWN);
+
+                        }else{
+                            if(joystick.getActuatorX()>0.0){
+                                tank.setMovementState(tank.RIGHT);
+                            }else {
+                                tank.setMovementState(tank.LEFT);
+                            }
+
+                        }
+                    }
 
                 }
-                if(event.getY()<screenY-3*screenY/4){
-                    if(event.getX()>screenX-3*screenX/4 && event.getX()<screenX - screenX/4)
-                    tank.setMovementState(tank.UP);
-                }
-
-
-
-                if(event.getX()>screenX-screenX/4){
-                    if(event.getY()>screenX-3*screenY/4 && event.getX()<screenY - screenY/4)
-                        tank.setMovementState(tank.RIGHT);
-
-                }
-                if(event.getX()<screenX-3*screenX/4){
-                    if(event.getY()>screenY-3*screenY/4 && event.getX()<screenY - screenY/4)
-                        tank.setMovementState(tank.LEFT);
-                }
-
-
-                break;
+                return true;
             case MotionEvent.ACTION_UP:
-                //paused = true;
+                joystick.setIsPressed(false);
+                joystick.resetActuator();
                 tank.setMovementState(tank.STOPPED);
-                break;
+                return true;
+
+//            case MotionEvent.ACTION_POINTER_DOWN:
+//                System.out.println("FIRE!!!");
+//                return  true;
+
         }
-
-
-
-        return true;
+        return super.onTouchEvent(event);
     }
-}  // end class
+
+
+
+
+
+
+
+} // end class

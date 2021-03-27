@@ -43,8 +43,8 @@ public class Tank {
 
         rect = new RectF();
 
-        length = screenX/10;
-        height = screenX/10;
+        length = screenY/10;
+        height = screenY/10;
 
         x = screenX / 2;
         y = screenY / 2;
@@ -128,8 +128,8 @@ public class Tank {
         return length;
     }
 
-
-
-
+    public float getTankSpeed() {
+        return tankSpeed;
+    }
 }
 
