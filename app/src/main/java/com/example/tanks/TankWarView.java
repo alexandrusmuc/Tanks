@@ -66,8 +66,6 @@ public class TankWarView extends SurfaceView implements Runnable {
         enemyBullet.setBulletSpeed(600);
 
     }
-
-
     @Override
     public void run() {
         while (playing) {
@@ -78,7 +76,7 @@ public class TankWarView extends SurfaceView implements Runnable {
 
             Date date = new Date();
 
-            if (date.getTime()%10 == 0 && enemy.getTankMoving() != Tank.STOPPED){
+            if (date.getTime()%5 == 0 && enemy.getTankMoving() != Tank.STOPPED){
                 enemyBullet.shoot(enemy);
             }
 
@@ -90,8 +88,6 @@ public class TankWarView extends SurfaceView implements Runnable {
             }
         }
     }
-
-
     private void update() {
         tank.update(fps);
         enemy.update(fps);
@@ -116,9 +112,6 @@ public class TankWarView extends SurfaceView implements Runnable {
 
 
         //enemy off screen
-
-
-
         date= new Date();
         if(date.getTime()%20 == 0 && enemy.getTankMoving()!= Tank.STOPPED){
             System.out.println(date.getTime());
@@ -166,9 +159,6 @@ public class TankWarView extends SurfaceView implements Runnable {
             enemyBullet.setInactive();
             tank = new Tank(context, screenX, screenY);
         }
-
-
-
         //player collide with enemy
         if(tank.getTankMoving() == Tank.DOWN){
             if(tank.getY() + tank.height > enemy.getY() &&
@@ -177,8 +167,6 @@ public class TankWarView extends SurfaceView implements Runnable {
                 tank.setY(enemy.getY() - tank.height);
             }
         }
-
-
         if(tank.getTankMoving() == Tank.UP){
             if(tank.getY()  < enemy.getY()+ enemy.height &&
                     tank.getY() > enemy.getY()  &&
@@ -186,8 +174,6 @@ public class TankWarView extends SurfaceView implements Runnable {
                 tank.setY(enemy.getY() + tank.height);
             }
         }
-
-
         if(tank.getTankMoving() == Tank.LEFT){
             if(tank.getX()  < enemy.getX()+ enemy.length &&
                     tank.getX() > enemy.getX()  &&
@@ -195,7 +181,6 @@ public class TankWarView extends SurfaceView implements Runnable {
                 tank.setX(enemy.getX() + tank.height);
             }
         }
-
         if(tank.getTankMoving() == Tank.RIGHT){
             if(tank.getX() + tank.length > enemy.getX() &&
                     tank.getX()+ tank.length < enemy.getX() + enemy.length &&
@@ -213,8 +198,6 @@ public class TankWarView extends SurfaceView implements Runnable {
                 enemy.setY(tank.getY() - tank.height);
             }
         }
-
-
         if(enemy.getTankMoving() == Tank.UP){
             if(enemy.getY()  < tank.getY()+ tank.height &&
                     enemy.getY() > tank.getY()  &&
@@ -222,8 +205,6 @@ public class TankWarView extends SurfaceView implements Runnable {
                 enemy.setY(tank.getY() + enemy.height);
             }
         }
-
-
         if(enemy.getTankMoving() == Tank.LEFT){
             if(enemy.getX()  < tank.getX()+ tank.length &&
                     enemy.getX() > tank.getX()  &&
@@ -239,14 +220,7 @@ public class TankWarView extends SurfaceView implements Runnable {
                 enemy.setX(tank.getX() - enemy.length);
             }
         }
-
-
-
-
-
-
-
-
+        
     }
 
 
