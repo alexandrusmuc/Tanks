@@ -118,6 +118,7 @@ public class Bullet {
         this.y = y;
     }
 
-
-
+    public void setBulletSpeed(int bulletSpeed) {
+        this.bulletSpeed = bulletSpeed;
+    }
 }

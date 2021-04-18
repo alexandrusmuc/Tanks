@@ -8,27 +8,27 @@ import android.graphics.RectF;
 public class Tank {
 
     RectF rect;
-    private Bitmap bitmap;
-    private Bitmap bitmapup;
-    private Bitmap bitmapleft;
-    private Bitmap bitmapright;
-    private Bitmap bitmapdown;
+    protected Bitmap bitmap;
+    protected Bitmap bitmapup;
+    protected Bitmap bitmapleft;
+    protected Bitmap bitmapright;
+    protected Bitmap bitmapdown;
     public Bitmap currentBitmap;
-    private float height;
-    private float length;
-    private float x;
-    private float y;
+    protected float height;
+    protected float length;
+    protected float x;
+    protected float y;
 
     private float tankSpeed;
-    public final int STOPPED = 0;
-    public final int LEFT = 1;
-    public final int RIGHT = 2;
-    public final int UP = 3;
-    public final int DOWN = 4;
+    public final static int STOPPED = 0;
+    public final static int LEFT = 1;
+    public final static int RIGHT = 2;
+    public final static int UP = 3;
+    public final static int DOWN = 4;
 
     ///maybe more movement than this
-    private int tankMoving = STOPPED;
-    private int heading = RIGHT;
+    protected int tankMoving = STOPPED;
+    protected int heading = UP;
     //private int tankSpeed;
 
 
@@ -48,10 +48,10 @@ public class Tank {
         height = screenY/10;
 
         x = screenX / 2;
-        y = screenY / 2;
+        y = screenY -height;
 
         tankSpeed = 350;
-        bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.tankright);
+        bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.tankup);
 
         // stretch the bitmap to a size appropriate for the screen resolution
         bitmap = Bitmap.createScaledBitmap(bitmap,
@@ -137,12 +137,20 @@ public class Tank {
         return tankSpeed;
     }
 
+    public void setTankSpeed(float tankSpeed) {
+        this.tankSpeed = tankSpeed;
+    }
+
     public float getHeight() {
     return this.height;
     }
 
     public int getDirection() {
         return this.heading;
+    }
+
+    public int getTankMoving() {
+        return tankMoving;
     }
 }
 

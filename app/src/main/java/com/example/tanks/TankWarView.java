@@ -8,9 +8,11 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.Button;
 
-public class TankWarView extends SurfaceView implements Runnable{
+import java.util.Date;
+import java.util.Random;
+
+public class TankWarView extends SurfaceView implements Runnable {
 
     private Context context;
     private Thread gameThread = null;
@@ -23,13 +25,16 @@ public class TankWarView extends SurfaceView implements Runnable{
     private long timeThisFrame;
     private int screenX;
     private int screenY;
-    private int score = 0;
-    private int lives = 5;
+    private int playerScore = 0;
+    private int enemyScore = 0;
     private Tank tank;
-    private Tank enemy;
+    private Enemy enemy;
     private Joystick joystick;
-    private Button fireButton;
+
     private Bullet playerBullet;
+    private Bullet enemyBullet;
+    private Date date = new Date();
+
     private int joystickPointerID = 0;
 
 
@@ -48,18 +53,17 @@ public class TankWarView extends SurfaceView implements Runnable{
     }
 
 
-
-    private void prepareLevel(){
-        tank = new Tank(context,screenX,screenY);
-
-
-        joystick = new Joystick(screenX/8, screenY -screenX/8,screenX/10,screenX/20);
-
-        playerBullet =  new Bullet(context,screenX,screenY);
+    private void prepareLevel() {
+        tank = new Tank(context, screenX, screenY);
+        enemy = new Enemy(context, screenX, screenY);
 
 
+        joystick = new Joystick(screenX / 6, screenY - screenX / 6, screenX / 8, screenX / 16);
 
+        playerBullet = new Bullet(context, screenX, screenY);
 
+        enemyBullet = new Bullet(context, screenX, screenY);
+        enemyBullet.setBulletSpeed(600);
 
     }
 
@@ -67,13 +71,16 @@ public class TankWarView extends SurfaceView implements Runnable{
     @Override
     public void run() {
         while (playing) {
-
             long startFrameTime = System.currentTimeMillis();
-
-            if(!paused){
+            if (!paused) {
                 update();
-            }
+                }
 
+            Date date = new Date();
+
+            if (date.getTime()%10 == 0 && enemy.getTankMoving() != Tank.STOPPED){
+                enemyBullet.shoot(enemy);
+            }
 
             draw();
 
@@ -81,63 +88,202 @@ public class TankWarView extends SurfaceView implements Runnable{
             if (timeThisFrame >= 1) {
                 fps = 1000 / timeThisFrame;
             }
-
         }
-
     }
 
 
-
-    private void update(){
+    private void update() {
         tank.update(fps);
-        if (playerBullet.isActive()){
+        enemy.update(fps);
+        if (playerBullet.isActive()) {
             playerBullet.update(fps);
         }
-        checkColisions();
+        if(enemyBullet.isActive()){
+            enemyBullet.update(fps);
+        }
+        checkCollisions();
         joystick.update();
-
-
     }
-    private void checkColisions(){
+
+    private void checkCollisions() {
 
         //tank off screen
-        if(tank.getX() > screenX - tank.getLength()) tank.setX(screenX-tank.getLength());
-        if(tank.getX()<0 ) tank.setX(0);
-        if(tank.getY()> screenY-tank.getLength())
-            tank.setY(screenY-tank.getLength());
-        if(tank.getY()< 0 ) tank.setY(0);
+        if (tank.getX() > screenX - tank.getLength()) tank.setX(screenX - tank.getLength());
+        if (tank.getX() < 0) tank.setX(0);
+        if (tank.getY() > screenY - tank.getLength())
+            tank.setY(screenY - tank.getLength());
+        if (tank.getY() < 0) tank.setY(0);
+
+
+        //enemy off screen
+
+
+
+        date= new Date();
+        if(date.getTime()%20 == 0 && enemy.getTankMoving()!= Tank.STOPPED){
+            System.out.println(date.getTime());
+            Random random = new Random();
+            int randomDirection = random.nextInt(5)+1;
+            enemy.setMovementState(randomDirection);
+        }
+        if(enemy.getX()>screenX - tank.getLength()){
+            enemy.setMovementState(Tank.LEFT);
+        }
+        if(enemy.getY()>screenY - enemy.getHeight()){
+            enemy.setMovementState(Tank.UP);
+        }
+        if(enemy.getX()<0 ){
+            enemy.setMovementState(Tank.RIGHT);
+        }
+
+        if (enemy.getY()<0){
+            enemy.setMovementState(Tank.DOWN);
+        }
+        //enemy bullet offscreen
+        if (enemyBullet.getX() > screenX - enemyBullet.getLength() ||
+                (enemyBullet.getX() < 0) ||
+                (enemyBullet.getY() > screenY - enemyBullet.getLength()) ||
+
+                (enemyBullet.getY() < 0)) enemyBullet.setInactive();
 
         //bullet off screen
-        if(playerBullet.getX() > screenX - playerBullet.getLength() ||
-        (playerBullet.getX()<0 ) ||
-        (playerBullet.getY()> screenY-playerBullet.getLength())||
+        if (playerBullet.getX() > screenX - playerBullet.getLength() ||
+                (playerBullet.getX() < 0) ||
+                (playerBullet.getY() > screenY - playerBullet.getLength()) ||
 
-        (playerBullet.getY()< 0 )) playerBullet.setInactive();
+                (playerBullet.getY() < 0)) playerBullet.setInactive();
+
+        //bullet intersects enemy
+        if (playerBullet.getRect().intersect(enemy.getRect()) && playerBullet.isActive()){
+            playerScore++;
+            playerBullet.setInactive();
+            enemy = new Enemy(context, screenX, screenY);
+        }
+
+        // enemyBullet intersects player
+        if (enemyBullet.getRect().intersect(tank.getRect()) && enemyBullet.isActive()){
+            enemyScore++;
+            enemyBullet.setInactive();
+            tank = new Tank(context, screenX, screenY);
+        }
+
+
+
+        //player collide with enemy
+        if(tank.getTankMoving() == Tank.DOWN){
+            if(tank.getY() + tank.height > enemy.getY() &&
+            tank.getY()+ tank.height < enemy.getY() + enemy.height &&
+            tank.getX() + tank.length > enemy.getX() && tank.getX() < enemy.getX() + enemy.length){
+                tank.setY(enemy.getY() - tank.height);
+            }
+        }
+
+
+        if(tank.getTankMoving() == Tank.UP){
+            if(tank.getY()  < enemy.getY()+ enemy.height &&
+                    tank.getY() > enemy.getY()  &&
+                    tank.getX() + tank.length > enemy.getX() && tank.getX() < enemy.getX() + enemy.length){
+                tank.setY(enemy.getY() + tank.height);
+            }
+        }
+
+
+        if(tank.getTankMoving() == Tank.LEFT){
+            if(tank.getX()  < enemy.getX()+ enemy.length &&
+                    tank.getX() > enemy.getX()  &&
+                    tank.getY() + tank.height > enemy.getY() && tank.getY() < enemy.getY() + enemy.height){
+                tank.setX(enemy.getX() + tank.height);
+            }
+        }
+
+        if(tank.getTankMoving() == Tank.RIGHT){
+            if(tank.getX() + tank.length > enemy.getX() &&
+                    tank.getX()+ tank.length < enemy.getX() + enemy.length &&
+                    tank.getY() + tank.height > enemy.getY() && tank.getY() < enemy.getY() + enemy.height){
+                tank.setX(enemy.getX() - tank.length);
+            }
+        }
+
+
+        //enemy collide with player
+        if(enemy.getTankMoving() == Tank.DOWN){
+            if(enemy.getY() + enemy.height > tank.getY() &&
+                    enemy.getY()+ enemy.height < tank.getY() + tank.height &&
+                    enemy.getX() + enemy.length > tank.getX() && enemy.getX() < tank.getX() + tank.length){
+                enemy.setY(tank.getY() - tank.height);
+            }
+        }
+
+
+        if(enemy.getTankMoving() == Tank.UP){
+            if(enemy.getY()  < tank.getY()+ tank.height &&
+                    enemy.getY() > tank.getY()  &&
+                    enemy.getX() + enemy.length > tank.getX() && enemy.getX() < tank.getX() + tank.length){
+                enemy.setY(tank.getY() + enemy.height);
+            }
+        }
+
+
+        if(enemy.getTankMoving() == Tank.LEFT){
+            if(enemy.getX()  < tank.getX()+ tank.length &&
+                    enemy.getX() > tank.getX()  &&
+                    enemy.getY() + enemy.height > tank.getY() && enemy.getY() < tank.getY() + tank.height){
+                enemy.setX(tank.getX() + enemy.height);
+            }
+        }
+
+        if(enemy.getTankMoving() == Tank.RIGHT){
+            if(enemy.getX() + enemy.length > tank.getX() &&
+                    enemy.getX()+ enemy.length < tank.getX() + tank.length &&
+                    enemy.getY() + enemy.height > tank.getY() && enemy.getY() < tank.getY() + tank.height){
+                enemy.setX(tank.getX() - enemy.length);
+            }
+        }
+
+
+
+
+
+
+
 
     }
 
 
-
-
-
-    private void draw(){
+    private void draw() {
 
         if (ourHolder.getSurface().isValid()) {
 
             canvas = ourHolder.lockCanvas();
             canvas.drawColor(Color.argb(255, 26, 128, 182));
-            paint.setColor(Color.argb(255,  255, 255, 255));
-            paint.setColor(Color.argb(255,  249, 129, 0));
-            paint.setTextSize(40);
+            paint.setColor(Color.argb(255, 255, 255, 255));
+            paint.setColor(Color.argb(255, 249, 129, 0));
+            paint.setTextSize(100);
             //paint.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText("Score: " + score + "   Lives: " + lives, 10,50, paint);
-            canvas.drawBitmap(tank.getBitmap(),tank.getX(),tank.getY(),paint);
-
+            canvas.drawText( "" + enemyScore ,screenX/2, screenY/4, paint);
+            canvas.drawText("" + playerScore, screenX/2 , (screenY/4)*3, paint);
+            canvas.drawBitmap(tank.getBitmap(), tank.getX(), tank.getY(), paint);
+            canvas.drawBitmap(enemy.getBitmap(), enemy.getX(), enemy.getY(), paint);
             joystick.draw(canvas);
-            if(playerBullet.isActive()){
+            if (playerBullet.isActive()) {
                 //canvas.drawRect(playerBullet.getRect(),paint);
-                canvas.drawCircle(playerBullet.getX(),playerBullet.getY(),playerBullet.getLength()/2,paint);
+                canvas.drawCircle(playerBullet.getX(), playerBullet.getY(), playerBullet.getLength() / 2, paint);
                 //canvas.drawBitmap(playerBullet.getBitmap(),playerBullet.getX(),playerBullet.getY(),paint);
+            }
+
+            if(enemyBullet.isActive()){
+                canvas.drawCircle(enemyBullet.getX(), enemyBullet.getY(), enemyBullet.getLength() / 2, paint);
+            }
+            if (enemyScore == 5){
+                canvas.drawText("Game over",40, screenY/2-20 , paint);
+                enemy.setMovementState(Tank.STOPPED);
+                playing = false;
+
+            }
+            if(playerScore == 5){
+                    canvas.drawText("You won!!!",40, screenY/2-20 , paint);
+                enemy.setMovementState(Tank.STOPPED);
+                playing = false;
             }
 
             ourHolder.unlockCanvasAndPost(canvas);
@@ -145,8 +291,6 @@ public class TankWarView extends SurfaceView implements Runnable{
         }
 
     }
-
-
 
 
     public void pause() {
@@ -160,7 +304,6 @@ public class TankWarView extends SurfaceView implements Runnable{
     }
 
 
-
     public void resume() {
         playing = true;
         gameThread = new Thread(this);
@@ -168,85 +311,48 @@ public class TankWarView extends SurfaceView implements Runnable{
     }
 
 
-//    @Override
-//    public boolean onTouchEvent(MotionEvent event) {
-//        switch (event.getAction() & event.getActionMasked()) {
-//            case MotionEvent.ACTION_DOWN:
-//                paused = false;
-//                if (event.getY() > screenY - screenY / 4) {
-//                    if (event.getX() > screenX - 3 * screenX / 4 && event.getX() < screenX - screenX / 4)
-//                        tank.setMovementState(tank.DOWN);
-//
-//                }
-//                if (event.getY() < screenY - 3 * screenY / 4) {
-//                    if (event.getX() > screenX - 3 * screenX / 4 && event.getX() < screenX - screenX / 4)
-//                        tank.setMovementState(tank.UP);
-//                }
-//
-//
-//                if (event.getX() > screenX - screenX / 4) {
-//                    if (event.getY() > screenX - 3 * screenY / 4 && event.getX() < screenY - screenY / 4)
-//                        tank.setMovementState(tank.RIGHT);
-//
-//                }
-//                if (event.getX() < screenX - 3 * screenX / 4) {
-//                    if (event.getY() > screenY - 3 * screenY / 4 && event.getX() < screenY - screenY / 4)
-//                        tank.setMovementState(tank.LEFT);
-//                }
-//
-//
-//                break;
-//            case MotionEvent.ACTION_UP:
-//                //paused = true;
-//                tank.setMovementState(tank.STOPPED);
-//                break;
-//        }
-//        return true;
-//
-//
-//
-//}
+
     @Override
-    public boolean onTouchEvent(MotionEvent event){
-        switch (event.getActionMasked()){
+    public boolean onTouchEvent(MotionEvent event) {
+        switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
-                if(joystick.isPressed()){
+                if (joystick.isPressed()) {
                     //joystick was already pressed
                     playerBullet.shoot(tank);
-                }else if(joystick.isPressed((double)event.getX(), (double)event.getY())){
+                } else if (joystick.isPressed((double) event.getX(), (double) event.getY())) {
                     paused = false;
                     joystickPointerID = event.getPointerId(event.getActionIndex());
                     joystick.setIsPressed(true);
-                }else{
+                } else {
                     playerBullet.shoot(tank);
                 }
                 return true;
             case MotionEvent.ACTION_MOVE:
-                if(joystick.isPressed()){
-                    joystick.setActuator((double)event.getX(), (double)event.getY());
-                    if(joystick.getActuatorY()< 0.0){
-                        if((Math.abs(joystick.getActuatorY())> (Math.abs(joystick.getActuatorX())))){
+                if (joystick.isPressed()) {
+                    joystick.setActuator((double) event.getX(), (double) event.getY());
+                    if (joystick.getActuatorY() < 0.0) {
+                        if ((Math.abs(joystick.getActuatorY()) > (Math.abs(joystick.getActuatorX())))) {
                             tank.setMovementState(tank.UP);
                             //playerBullet.shoot(tank);
 
-                        }else{
-                            if(joystick.getActuatorX()>0.0){
+                        } else {
+                            if (joystick.getActuatorX() > 0.0) {
                                 tank.setMovementState(tank.RIGHT);
-                            }else {
+                            } else {
                                 tank.setMovementState(tank.LEFT);
                             }
 
-                    }
+                        }
 
-                }else{
-                        if((Math.abs(joystick.getActuatorY())> (Math.abs(joystick.getActuatorX())))){
+                    } else {
+                        if ((Math.abs(joystick.getActuatorY()) > (Math.abs(joystick.getActuatorX())))) {
                             tank.setMovementState(tank.DOWN);
 
-                        }else{
-                            if(joystick.getActuatorX()>0.0){
+                        } else {
+                            if (joystick.getActuatorX() > 0.0) {
                                 tank.setMovementState(tank.RIGHT);
-                            }else {
+                            } else {
                                 tank.setMovementState(tank.LEFT);
                             }
 
@@ -257,27 +363,18 @@ public class TankWarView extends SurfaceView implements Runnable{
                 return true;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP:
-                if(joystickPointerID == event.getPointerId(event.getActionIndex())){
+                if (joystickPointerID == event.getPointerId(event.getActionIndex())) {
                     joystick.setIsPressed(false);
                     joystick.resetActuator();
                     tank.setMovementState(tank.STOPPED);
                 }
 
-
                 return true;
 
-//            case MotionEvent.ACTION_POINTER_DOWN:
-//                System.out.println("FIRE!!!");
-//                return  true;
 
         }
         return super.onTouchEvent(event);
     }
-
-
-
-
-
 
 
 } // end class
