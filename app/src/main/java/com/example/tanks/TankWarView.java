@@ -77,7 +77,7 @@ public class TankWarView extends SurfaceView implements Runnable {
             Date date = new Date();
 
             if (date.getTime()%5 == 0 && enemy.getTankMoving() != Tank.STOPPED){
-                enemyBullet.shoot(enemy);
+               // enemyBullet.shoot(enemy);
             }
 
             draw();
@@ -329,7 +329,6 @@ public class TankWarView extends SurfaceView implements Runnable {
                             } else {
                                 tank.setMovementState(tank.LEFT);
                             }
-
                         }
                     }
 

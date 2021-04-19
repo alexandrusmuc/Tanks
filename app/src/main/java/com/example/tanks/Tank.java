@@ -45,7 +45,7 @@ public class Tank {
         rect = new RectF();
 
         length = screenY/10;
-        height = screenY/10;
+        height = screenY/8;
 
         x = screenX / 2;
         y = screenY -height;
