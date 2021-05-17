@@ -1,7 +1,6 @@
 package com.example.tanks;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.RectF;
 
 public class Bullet {
@@ -11,7 +10,7 @@ public class Bullet {
     private float x;
     private float y;
     private RectF rect;
-    private Bitmap bitmap;
+
 
     public final int LEFT = 1;
     public final int RIGHT = 2;
@@ -28,13 +27,6 @@ public class Bullet {
         this.screenY = screenY;
         this.rect  = new RectF();
         this.bulletSpeed = 1000;
-
-
-
-
-
-
-
     }
     public boolean shoot(Tank tank){
         if(!isActive){
@@ -53,17 +45,13 @@ public class Bullet {
                 y = tank.getY() + tank.getHeight()/2;
 
             }
-
-
-
             this.heading = tank.getDirection();
             isActive = true;
-            this.height = screenY/80;
-            this.length = screenY/80;
+            this.height = screenY/160;
+            this.length = screenY/160;
             return true;
         }
         return false;
-
     }
     public void update(long fps){
         if(heading == UP){

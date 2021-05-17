@@ -76,8 +76,14 @@ public class TankWarView extends SurfaceView implements Runnable {
 
             Date date = new Date();
 
-            if (date.getTime()%5 == 0 && enemy.getTankMoving() != Tank.STOPPED){
-               // enemyBullet.shoot(enemy);
+            if (date.getTime()%5 == 0 && enemy.getTankMoving() != Tank.STOPPED && playing){
+                enemyBullet.shoot(enemy);
+            }
+            if(date.getTime()%20 == 0 && enemy.getTankMoving()!= Tank.STOPPED){
+                System.out.println(date.getTime());
+                Random random = new Random();
+                int randomDirection = random.nextInt(5)+1;
+                enemy.setMovementState(randomDirection);
             }
 
             draw();
@@ -101,7 +107,7 @@ public class TankWarView extends SurfaceView implements Runnable {
         joystick.update();
     }
 
-    private void checkCollisions() {
+    private void checkCollisions()  {
 
         //tank off screen
         if (tank.getX() > screenX - tank.getLength()) tank.setX(screenX - tank.getLength());
@@ -111,14 +117,8 @@ public class TankWarView extends SurfaceView implements Runnable {
         if (tank.getY() < 0) tank.setY(0);
 
 
+
         //enemy off screen
-        date= new Date();
-        if(date.getTime()%20 == 0 && enemy.getTankMoving()!= Tank.STOPPED){
-            System.out.println(date.getTime());
-            Random random = new Random();
-            int randomDirection = random.nextInt(5)+1;
-            enemy.setMovementState(randomDirection);
-        }
         if(enemy.getX()>screenX - tank.getLength()){
             enemy.setMovementState(Tank.LEFT);
         }
@@ -145,6 +145,8 @@ public class TankWarView extends SurfaceView implements Runnable {
                 (playerBullet.getY() > screenY - playerBullet.getLength()) ||
 
                 (playerBullet.getY() < 0)) playerBullet.setInactive();
+
+
 
         //bullet intersects enemy
         if (playerBullet.getRect().intersect(enemy.getRect()) && playerBullet.isActive()){
@@ -188,8 +190,6 @@ public class TankWarView extends SurfaceView implements Runnable {
                 tank.setX(enemy.getX() - tank.length);
             }
         }
-
-
         //enemy collide with player
         if(enemy.getTankMoving() == Tank.DOWN){
             if(enemy.getY() + enemy.height > tank.getY() &&
@@ -240,13 +240,13 @@ public class TankWarView extends SurfaceView implements Runnable {
             canvas.drawBitmap(enemy.getBitmap(), enemy.getX(), enemy.getY(), paint);
             joystick.draw(canvas);
             if (playerBullet.isActive()) {
-                //canvas.drawRect(playerBullet.getRect(),paint);
-                canvas.drawCircle(playerBullet.getX(), playerBullet.getY(), playerBullet.getLength() / 2, paint);
-                //canvas.drawBitmap(playerBullet.getBitmap(),playerBullet.getX(),playerBullet.getY(),paint);
+                
+                canvas.drawCircle(playerBullet.getX(), playerBullet.getY(), playerBullet.getLength(), paint);
+
             }
 
             if(enemyBullet.isActive()){
-                canvas.drawCircle(enemyBullet.getX(), enemyBullet.getY(), enemyBullet.getLength() / 2, paint);
+                canvas.drawCircle(enemyBullet.getX(), enemyBullet.getY(), enemyBullet.getLength(), paint);
             }
             if (enemyScore == 5){
                 canvas.drawText("Game over",40, screenY/2-20 , paint);
@@ -276,16 +276,11 @@ public class TankWarView extends SurfaceView implements Runnable {
         }
 
     }
-
-
     public void resume() {
         playing = true;
         gameThread = new Thread(this);
         gameThread.start();
     }
-
-
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getActionMasked()) {
@@ -316,9 +311,7 @@ public class TankWarView extends SurfaceView implements Runnable {
                             } else {
                                 tank.setMovementState(tank.LEFT);
                             }
-
                         }
-
                     } else {
                         if ((Math.abs(joystick.getActuatorY()) > (Math.abs(joystick.getActuatorX())))) {
                             tank.setMovementState(tank.DOWN);
@@ -331,7 +324,6 @@ public class TankWarView extends SurfaceView implements Runnable {
                             }
                         }
                     }
-
                 }
                 return true;
             case MotionEvent.ACTION_UP:
@@ -341,10 +333,7 @@ public class TankWarView extends SurfaceView implements Runnable {
                     joystick.resetActuator();
                     tank.setMovementState(tank.STOPPED);
                 }
-
                 return true;
-
-
         }
         return super.onTouchEvent(event);
     }
